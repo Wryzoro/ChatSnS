@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Executar ChatClientFX",
+            "request": "launch",
+            "mainClass": "ChatClientFX",
+            "vmArgs": "--module-path C:/javafx/lib --add-modules javafx.controls,javafx.fxml"
+        }
+    ]
+}
