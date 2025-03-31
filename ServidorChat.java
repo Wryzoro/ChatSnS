@@ -91,7 +91,7 @@ public class ServidorChat {
 
         private void processarComando(String comando) {
             if (comando.equalsIgnoreCase("/listar_salas")) {
-                out.println("[SISTEMA] Salas disponíveis: " + String.join(", ", salas.keySet()));
+                out.println("Salas disponíveis: " + String.join(", ", salas.keySet()));
             } else if (comando.startsWith("/entrar_sala ")) {
                 String novaSala = comando.substring(12).trim();
                 sairSala(salaAtual);

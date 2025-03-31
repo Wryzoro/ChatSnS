@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -27,8 +26,9 @@ public class ChatClienteGUI extends JFrame {
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        checkResources();
-        verifyResources();
+
+        // Debug inicial
+        debugIconLoading();
 
         // Inicializa componentes
         initComponents();
@@ -38,6 +38,20 @@ public class ChatClienteGUI extends JFrame {
         
         // Conecta ao servidor
         conectarServidor();
+    }
+
+    private void debugIconLoading() {
+        String resourcesPath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "resources" + File.separator;
+        System.out.println("=== VERIFICAÇÃO DE RECURSOS ===");
+        System.out.println("Diretório atual: " + System.getProperty("user.dir"));
+        System.out.println("Caminho dos recursos: " + resourcesPath);
+
+        String[] icons = {"user.png", "admin.png", "chat.png"};
+        for (String icon : icons) {
+            File f = new File(resourcesPath + icon);
+            System.out.println(icon + " - " + (f.exists() ? "ENCONTRADO" : "NÃO ENCONTRADO") + 
+            " em " + f.getAbsolutePath());
+        }
     }
 
     private void initComponents() {
@@ -98,66 +112,52 @@ public class ChatClienteGUI extends JFrame {
             }
         });
     }
-    private void checkResources() {
-        System.out.println("Verificando recursos...");
-        String[] resources = {
-            "\\src\\resources\\admin.png",
-            "\\src\\resources\\user.png", 
-            "\\src\\resources\\chat.png"
-        };
-        
-        for (String res : resources) {
-            URL url = getClass().getClassLoader().getResource(res);
-            System.out.println(res + " -> " + (url != null ? "OK" : "NÃO ENCONTRADO"));
-        }
-    }
+
     private void setupIcons() {
         try {
-            // Caminho base corrigido
-            String basePath = System.getProperty("user.dir") + "\\src\\resources\\";
-            System.out.println("Buscando ícones em: " + basePath);
-    
-            // Carrega ícones
-            userIcon = loadIcon(basePath + "user.png");
-            adminIcon = loadIcon(basePath + "admin.png");
+            String basePath = System.getProperty("user.dir") + File.separator + "src" + File.separator + "resources" + File.separator;
+            
+            // Carrega ícones com verificação explícita
+            userIcon = loadIcon(basePath + "user.png", 32, 32);
+            adminIcon = loadIcon(basePath + "admin.png", 32, 32);
             
             // Ícone da aplicação
-            ImageIcon appIcon = loadIcon(basePath + "chat.png");
+            ImageIcon appIcon = loadIcon(basePath + "chat.png", 64, 64);
             if (appIcon != null) {
                 setIconImage(appIcon.getImage());
             }
-    
+            
+            // Configura renderizador personalizado
+            userList.setCellRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, 
+                        int index, boolean isSelected, boolean cellHasFocus) {
+                    JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, isSelected, cellHasFocus);
+                    
+                    if (value.toString().startsWith("Admin-")) {
+                        label.setIcon(adminIcon);
+                        label.setForeground(new Color(200, 0, 0)); // Vermelho para admin
+                    } else {
+                        label.setIcon(userIcon);
+                    }
+                    return label;
+                }
+            });
+
         } catch (Exception e) {
             System.err.println("Erro ao carregar ícones: " + e.getMessage());
-            // Fallback para ícones padrão
-            userIcon = createDefaultIcon(Color.BLUE, "USR");
-            adminIcon = createDefaultIcon(Color.RED, "ADM");
+            createFallbackIcons();
         }
     }
-    
-    private ImageIcon loadIcon(String absolutePath) {
-        try {
-            System.out.println("Tentando carregar: " + absolutePath);
-            File file = new File(absolutePath);
-            if (file.exists()) {
-                return new ImageIcon(absolutePath);
-            }
-            throw new FileNotFoundException("Arquivo não encontrado: " + absolutePath);
-        } catch (Exception e) {
-            System.err.println("Falha ao carregar ícone: " + e.getMessage());
-            return null;
+
+    private ImageIcon loadIcon(String path, int width, int height) throws Exception {
+        File file = new File(path);
+        if (!file.exists()) {
+            throw new FileNotFoundException("Arquivo não encontrado: " + path);
         }
-    }
-    private void verifyResources() {
-        String basePath = System.getProperty("user.dir") + "\\src\\resources\\";
-        System.out.println("Verificação de caminhos:");
-        
-        String[] resources = {"user.png", "admin.png", "chat.png"};
-        
-        for (String res : resources) {
-            String fullPath = basePath + res;
-            System.out.println(fullPath + " → " + (new File(fullPath).exists() ? "EXISTE" : "NÃO ENCONTRADO"));
-        }
+        ImageIcon icon = new ImageIcon(path);
+        return resizeIcon(icon, width, height);
     }
 
     private ImageIcon resizeIcon(ImageIcon icon, int width, int height) {
@@ -165,7 +165,13 @@ public class ChatClienteGUI extends JFrame {
         Image resized = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
         return new ImageIcon(resized);
     }
-    
+
+    private void createFallbackIcons() {
+        System.out.println("Criando ícones padrão...");
+        userIcon = createDefaultIcon(new Color(0, 100, 200), "USR");
+        adminIcon = createDefaultIcon(new Color(200, 0, 0), "ADM");
+    }
+
     private ImageIcon createDefaultIcon(Color color, String text) {
         BufferedImage image = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
@@ -185,6 +191,7 @@ public class ChatClienteGUI extends JFrame {
         g.dispose();
         return new ImageIcon(image);
     }
+
     private void conectarServidor() {
         nomeCliente = JOptionPane.showInputDialog("Digite seu nome:");
         if (nomeCliente == null || nomeCliente.trim().isEmpty()) {
@@ -193,7 +200,7 @@ public class ChatClienteGUI extends JFrame {
         setTitle("Chat - " + nomeCliente + " (Sala: " + salaAtual + ")");
 
         try {
-            Socket socket = new Socket("localhost", 12345);
+            Socket socket = new Socket("localhost", 8080);
             out = new PrintWriter(socket.getOutputStream(), true);
             
             // Envia credenciais
