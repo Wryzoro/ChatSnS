@@ -70,14 +70,14 @@ public class ServidorChat {
         private void entrarSala(String sala) {
             salaAtual = sala;
             salas.computeIfAbsent(sala, k -> ConcurrentHashMap.newKeySet()).add(out);
-            broadcast(sala, "[SISTEMA] " + nomeCliente + " entrou na sala");
+            broadcast(sala, nomeCliente + " entrou na sala");
             atualizarListaUsuarios(sala);
         }
 
         private void sairSala(String sala) {
             if (salas.containsKey(sala)) {
                 salas.get(sala).remove(out);
-                broadcast(sala, "[SISTEMA] " + nomeCliente + " saiu da sala");
+                broadcast(sala,  nomeCliente + " saiu da sala");
                 atualizarListaUsuarios(sala);
             }
         }
